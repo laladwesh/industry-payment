@@ -5,10 +5,9 @@ services:
       dockerfile: Dockerfile
     container_name: industry-payment-app
     restart: unless-stopped
+    network_mode: host
     env_file:
       - .env.production
-    ports:
-      - "5011:5011"
     volumes:
       - uploads_data:/app/uploads/payment-proofs
 
