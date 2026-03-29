@@ -20,6 +20,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || "http://localhost:3000";
 const API_BASE = process.env.API_BASE || "/ccd-industry/api";
+const APP_BASE = process.env.APP_BASE || "/ccd-industry";
 
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true }));
@@ -33,7 +34,7 @@ app.use(
 );
 
 app.get("/", (_req, res) => {
-  res.redirect("/ccd-industry");
+  res.redirect(APP_BASE);
 });
 
 app.get(`${API_BASE}/health`, (_req, res) => {
@@ -57,6 +58,8 @@ app.use(API_BASE, paymentRoutes);
 if (process.env.NODE_ENV === "production") {
   const clientPath = path.join(__dirname, "client/build");
   app.use(express.static(clientPath));
+  app.use(APP_BASE, express.static(clientPath));
+
   app.use((req, res, next) => {
     if (req.method !== "GET") {
       return next();
@@ -64,6 +67,10 @@ if (process.env.NODE_ENV === "production") {
 
     if (req.path.startsWith(`${API_BASE}/`) || req.path === API_BASE) {
       return res.status(404).end();
+    }
+
+    if (req.path !== "/" && req.path !== APP_BASE && !req.path.startsWith(`${APP_BASE}/`)) {
+      return next();
     }
 
     return res.sendFile(path.join(clientPath, "index.html"));
