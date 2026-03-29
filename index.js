@@ -57,11 +57,16 @@ app.use(API_BASE, paymentRoutes);
 if (process.env.NODE_ENV === "production") {
   const clientPath = path.join(__dirname, "client/build");
   app.use(express.static(clientPath));
-  app.get("*", (req, res) => {
+  app.use((req, res, next) => {
+    if (req.method !== "GET") {
+      return next();
+    }
+
     if (req.path.startsWith(`${API_BASE}/`) || req.path === API_BASE) {
       return res.status(404).end();
     }
-    res.sendFile(path.join(clientPath, "index.html"));
+
+    return res.sendFile(path.join(clientPath, "index.html"));
   });
 }
 
