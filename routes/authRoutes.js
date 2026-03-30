@@ -24,9 +24,10 @@ function generateOtp() {
   return `${Math.floor(100000 + Math.random() * 900000)}`;
 }
 
-router.post(["/auth/request-otp", "/identity/request-otp"], async (req, res, next) => {
+async function handleOtpRequest(req, res, next) {
   try {
-    const { email, purpose: rawPurpose } = req.body;
+    const payload = req.method === "GET" ? req.query : req.body;
+    const { email, purpose: rawPurpose } = payload;
     const purpose = rawPurpose === "login" ? "login" : "register";
 
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -76,7 +77,10 @@ router.post(["/auth/request-otp", "/identity/request-otp"], async (req, res, nex
   } catch (error) {
     return next(error);
   }
-});
+}
+
+router.post(["/auth/send-code", "/identity/send-code"], handleOtpRequest);
+router.get(["/auth/send-code", "/identity/send-code"], handleOtpRequest);
 
 router.post(["/auth/verify-otp-register", "/identity/verify-otp-register"], async (req, res, next) => {
   try {

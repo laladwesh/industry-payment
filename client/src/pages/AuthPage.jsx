@@ -33,11 +33,26 @@ function AuthPage({ mode }) {
     try {
       const email = mode === "login" ? loginForm.email : registerForm.email;
       const purpose = mode === "login" ? "login" : "register";
+      const otpRequestPath = "/identity/send-code";
 
-      const response = await api.post("/identity/request-otp", {
-        email,
-        purpose,
-      });
+      let response;
+      try {
+        response = await api.post(otpRequestPath, {
+          email,
+          purpose,
+        });
+      } catch (requestError) {
+        if (requestError.response?.status !== 405) {
+          throw requestError;
+        }
+
+        response = await api.get(otpRequestPath, {
+          params: {
+            email,
+            purpose,
+          },
+        });
+      }
 
       setOtpSent(true);
       setDebugOtp(response.data.debugOtp || "");

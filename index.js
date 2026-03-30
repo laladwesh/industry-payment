@@ -9,6 +9,7 @@ const connectDb = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
 const registrationRoutes = require("./routes/registrationRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
+const Registration = require("./models/Registration");
 
 const envPath = process.env.NODE_ENV === "production" && fs.existsSync(path.join(__dirname, ".env.production"))
   ? path.join(__dirname, ".env.production")
@@ -72,6 +73,19 @@ app.get(`${API_BASE}/test`, (_req, res) => {
     timestamp: new Date().toISOString(),
   });
 });
+
+
+
+//route to get all the registrations for admin no authentication required
+app.get(`${API_BASE}/registrations`, async (req, res, next) => {
+  try {
+    const registrations = await Registration.find().populate("user", "name email");
+    res.json({ registrations });
+  } catch (error) {
+    next(error);
+  }
+});
+
 
 app.use(API_BASE, authRoutes);
 app.use(API_BASE, registrationRoutes);
