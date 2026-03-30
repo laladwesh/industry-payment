@@ -1,7 +1,9 @@
 const nodemailer = require("nodemailer");
+const dns = require("dns");
 
 let transporter;
 let warnedMissingConfig = false;
+let dnsOrderConfigured = false;
 
 function maskEmail(email) {
   const value = String(email || "").trim();
@@ -46,14 +48,27 @@ function getTransporter() {
     host,
     port,
     secure: port === 465,
+    forceIPv4: (process.env.SMTP_FORCE_IPV4 || "true").toLowerCase() !== "false",
     user: maskEmail(user),
     from: process.env.SMTP_FROM || process.env.SMTP_USER,
   });
+
+  const forceIPv4 = (process.env.SMTP_FORCE_IPV4 || "true").toLowerCase() !== "false";
+  if (forceIPv4 && !dnsOrderConfigured) {
+    dns.setDefaultResultOrder("ipv4first");
+    dnsOrderConfigured = true;
+  }
 
   transporter = nodemailer.createTransport({
     host,
     port,
     secure: port === 465,
+    connectionTimeout: Number(process.env.SMTP_CONNECTION_TIMEOUT_MS || 15000),
+    greetingTimeout: Number(process.env.SMTP_GREETING_TIMEOUT_MS || 10000),
+    socketTimeout: Number(process.env.SMTP_SOCKET_TIMEOUT_MS || 20000),
+    tls: {
+      servername: host,
+    },
     auth: {
       user,
       pass,
