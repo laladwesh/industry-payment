@@ -34,7 +34,7 @@ function AuthPage({ mode }) {
       const email = mode === "login" ? loginForm.email : registerForm.email;
       const purpose = mode === "login" ? "login" : "register";
 
-      const response = await api.post("/auth/request-otp", {
+      const response = await api.post("/identity/request-otp", {
         email,
         purpose,
       });
@@ -58,12 +58,12 @@ function AuthPage({ mode }) {
     try {
       let response;
       if (mode === "login") {
-        response = await api.post("/auth/verify-otp-login", {
+        response = await api.post("/identity/verify-otp-login", {
           email: loginForm.email,
           otp,
         });
       } else {
-        response = await api.post("/auth/verify-otp-register", {
+        response = await api.post("/identity/verify-otp-register", {
           ...registerForm,
           otp,
         });

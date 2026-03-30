@@ -68,7 +68,7 @@ function DashboardPage() {
     try {
       setLoading(true);
       const [meResponse, registrationsResponse, instructionsResponse] = await Promise.all([
-        api.get("/auth/me"),
+        api.get("/identity/me"),
         api.get("/registrations/me"),
         api.get("/payments/instructions"),
       ]);

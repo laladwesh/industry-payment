@@ -28,7 +28,7 @@ function AdminPage() {
       setLoading(true);
       setError("");
 
-      const meResponse = await api.get("/auth/me");
+      const meResponse = await api.get("/identity/me");
       setUser(meResponse.data.user || null);
       if (meResponse.data.user?.role !== "admin") {
         navigate("/dashboard", { replace: true });

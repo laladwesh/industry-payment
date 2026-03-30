@@ -24,7 +24,7 @@ function generateOtp() {
   return `${Math.floor(100000 + Math.random() * 900000)}`;
 }
 
-router.post("/auth/request-otp", async (req, res, next) => {
+router.post(["/auth/request-otp", "/identity/request-otp"], async (req, res, next) => {
   try {
     const { email, purpose: rawPurpose } = req.body;
     const purpose = rawPurpose === "login" ? "login" : "register";
@@ -78,7 +78,7 @@ router.post("/auth/request-otp", async (req, res, next) => {
   }
 });
 
-router.post("/auth/verify-otp-register", async (req, res, next) => {
+router.post(["/auth/verify-otp-register", "/identity/verify-otp-register"], async (req, res, next) => {
   try {
     const { name, email, otp } = req.body;
 
@@ -137,7 +137,7 @@ router.post("/auth/verify-otp-register", async (req, res, next) => {
   }
 });
 
-router.post("/auth/verify-otp-login", async (req, res, next) => {
+router.post(["/auth/verify-otp-login", "/identity/verify-otp-login"], async (req, res, next) => {
   try {
     const { email, otp } = req.body;
 
@@ -191,7 +191,7 @@ router.post("/auth/verify-otp-login", async (req, res, next) => {
   }
 });
 
-router.get("/auth/me", authMiddleware, async (req, res, next) => {
+router.get(["/auth/me", "/identity/me"], authMiddleware, async (req, res, next) => {
   try {
     const user = await User.findById(req.user.sub);
     if (!user) {
@@ -210,7 +210,7 @@ router.get("/auth/me", authMiddleware, async (req, res, next) => {
   }
 });
 
-router.post("/auth/logout", (_req, res) => {
+router.post(["/auth/logout", "/identity/logout"], (_req, res) => {
   return res.json({ message: "Logged out" });
 });
 

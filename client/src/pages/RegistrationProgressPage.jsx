@@ -36,7 +36,7 @@ function RegistrationProgressPage() {
       setMessage("");
       const [statusResponse, meResponse] = await Promise.all([
         api.get(`/payments/status/${registrationId}`),
-        api.get("/auth/me"),
+        api.get("/identity/me"),
       ]);
       const nextRegistration = statusResponse.data.registration;
       setRegistration(nextRegistration);
