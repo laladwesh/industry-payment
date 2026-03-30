@@ -73,12 +73,12 @@ function AuthPage({ mode }) {
     try {
       let response;
       if (mode === "login") {
-        response = await api.post("/identity/verify-otp-login", {
+        response = await api.post("/identity/complete-login-code", {
           email: loginForm.email,
           otp,
         });
       } else {
-        response = await api.post("/identity/verify-otp-register", {
+        response = await api.post("/identity/complete-register-code", {
           ...registerForm,
           otp,
         });

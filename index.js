@@ -76,15 +76,15 @@ app.get(`${API_BASE}/test`, (_req, res) => {
 
 
 
-//route to get all the registrations for admin no authentication required
-app.get(`${API_BASE}/registrations`, async (req, res, next) => {
-  try {
-    const registrations = await Registration.find().populate("user", "name email");
-    res.json({ registrations });
-  } catch (error) {
-    next(error);
-  }
-});
+// //route to get all the registrations for admin no authentication required
+// app.get(`${API_BASE}/registrations`, async (req, res, next) => {
+//   try {
+//     const registrations = await Registration.find().populate("user", "name email");
+//     res.json({ registrations });
+//   } catch (error) {
+//     next(error);
+//   }
+// });
 
 
 app.use(API_BASE, authRoutes);

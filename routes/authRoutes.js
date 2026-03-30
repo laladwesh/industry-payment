@@ -82,7 +82,7 @@ async function handleOtpRequest(req, res, next) {
 router.post(["/auth/send-code", "/identity/send-code"], handleOtpRequest);
 router.get(["/auth/send-code", "/identity/send-code"], handleOtpRequest);
 
-router.post(["/auth/verify-otp-register", "/identity/verify-otp-register"], async (req, res, next) => {
+router.post(["/auth/complete-register-code", "/identity/complete-register-code"], async (req, res, next) => {
   try {
     const { name, email, otp } = req.body;
 
@@ -141,7 +141,7 @@ router.post(["/auth/verify-otp-register", "/identity/verify-otp-register"], asyn
   }
 });
 
-router.post(["/auth/verify-otp-login", "/identity/verify-otp-login"], async (req, res, next) => {
+router.post(["/auth/complete-login-code", "/identity/complete-login-code"], async (req, res, next) => {
   try {
     const { email, otp } = req.body;
 
