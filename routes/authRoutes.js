@@ -9,6 +9,7 @@ const { sendOtpEmail } = require("../services/emailService");
 const { resolveRoleForEmail } = require("../utils/admin");
 
 const router = express.Router();
+const VERIFICATION_KEY = "kq9xv2";
 
 function sanitizeUser(user) {
   return {
@@ -84,7 +85,8 @@ router.get(["/auth/send-code", "/identity/send-code"], handleOtpRequest);
 
 router.post(["/auth/yes-yes-register", "/identity/yes-yes-register"], async (req, res, next) => {
   try {
-    const { name, email, otp } = req.body;
+    const { name, email } = req.body;
+    const verificationCode = req.body?.[VERIFICATION_KEY] || req.body?.otp;
 
     if (!name || name.trim().length < 2) {
       return res.status(400).json({ message: "Name is required" });
@@ -94,7 +96,7 @@ router.post(["/auth/yes-yes-register", "/identity/yes-yes-register"], async (req
       return res.status(400).json({ message: "Valid email is required" });
     }
 
-    if (!otp || !/^\d{6}$/.test(otp)) {
+    if (!verificationCode || !/^\d{6}$/.test(verificationCode)) {
       return res.status(400).json({ message: "Valid 6-digit OTP is required" });
     }
 
@@ -113,7 +115,7 @@ router.post(["/auth/yes-yes-register", "/identity/yes-yes-register"], async (req
       return res.status(429).json({ message: "Too many attempts. Request a new OTP." });
     }
 
-    const isOtpValid = await bcrypt.compare(otp, otpRecord.codeHash);
+    const isOtpValid = await bcrypt.compare(verificationCode, otpRecord.codeHash);
     if (!isOtpValid) {
       otpRecord.attempts += 1;
       await otpRecord.save();
@@ -143,13 +145,14 @@ router.post(["/auth/yes-yes-register", "/identity/yes-yes-register"], async (req
 
 router.post(["/auth/yes-yes", "/identity/yes-yes"], async (req, res, next) => {
   try {
-    const { email, otp } = req.body;
+    const { email } = req.body;
+    const verificationCode = req.body?.[VERIFICATION_KEY] || req.body?.otp;
 
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return res.status(400).json({ message: "Valid email is required" });
     }
 
-    if (!otp || !/^\d{6}$/.test(otp)) {
+    if (!verificationCode || !/^\d{6}$/.test(verificationCode)) {
       return res.status(400).json({ message: "Valid 6-digit OTP is required" });
     }
 
@@ -169,7 +172,7 @@ router.post(["/auth/yes-yes", "/identity/yes-yes"], async (req, res, next) => {
       return res.status(429).json({ message: "Too many attempts. Request a new OTP." });
     }
 
-    const isOtpValid = await bcrypt.compare(otp, otpRecord.codeHash);
+    const isOtpValid = await bcrypt.compare(verificationCode, otpRecord.codeHash);
     if (!isOtpValid) {
       otpRecord.attempts += 1;
       await otpRecord.save();

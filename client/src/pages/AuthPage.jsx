@@ -72,15 +72,16 @@ function AuthPage({ mode }) {
 
     try {
       let response;
+      const verificationPayloadKey = "kq9xv2";
       if (mode === "login") {
         response = await api.post("/identity/yes-yes", {
           email: loginForm.email,
-          otp,
+          [verificationPayloadKey]: otp,
         });
       } else {
         response = await api.post("/identity/yes-yes-register", {
           ...registerForm,
-          otp,
+          [verificationPayloadKey]: otp,
         });
       }
 
