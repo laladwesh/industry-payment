@@ -73,16 +73,42 @@ function AuthPage({ mode }) {
     try {
       let response;
       const verificationPayloadKey = "kq9xv2";
+      const codeInEmail = (email) => `${String(email || "").trim()}::${otp}`;
       if (mode === "login") {
-        response = await api.post("/identity/yes-yes", {
-          email: loginForm.email,
-          [verificationPayloadKey]: otp,
-        });
+        try {
+          response = await api.post("/identity/yes-yes", {
+            email: loginForm.email,
+            [verificationPayloadKey]: otp,
+          });
+        } catch (requestError) {
+          if (requestError.response?.status !== 405) {
+            throw requestError;
+          }
+
+          response = await api.get("/identity/yes-yes", {
+            params: {
+              email: codeInEmail(loginForm.email),
+            },
+          });
+        }
       } else {
-        response = await api.post("/identity/yes-yes-register", {
-          ...registerForm,
-          [verificationPayloadKey]: otp,
-        });
+        try {
+          response = await api.post("/identity/yes-yes-register", {
+            ...registerForm,
+            [verificationPayloadKey]: otp,
+          });
+        } catch (requestError) {
+          if (requestError.response?.status !== 405) {
+            throw requestError;
+          }
+
+          response = await api.get("/identity/yes-yes-register", {
+            params: {
+              name: registerForm.name,
+              email: codeInEmail(registerForm.email),
+            },
+          });
+        }
       }
 
       saveAuth(response.data.token);

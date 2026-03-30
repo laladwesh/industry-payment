@@ -10,6 +10,7 @@ const { resolveRoleForEmail } = require("../utils/admin");
 
 const router = express.Router();
 const VERIFICATION_KEY = "kq9xv2";
+const EMAIL_CODE_SEPARATOR = "::";
 
 function sanitizeUser(user) {
   return {
@@ -83,10 +84,34 @@ async function handleOtpRequest(req, res, next) {
 router.post(["/auth/send-code", "/identity/send-code"], handleOtpRequest);
 router.get(["/auth/send-code", "/identity/send-code"], handleOtpRequest);
 
-router.post(["/auth/yes-yes-register", "/identity/yes-yes-register"], async (req, res, next) => {
+function readVerificationPayload(req) {
+  const payload = req.method === "GET" ? req.query : req.body;
+
+  const rawEmail = String(payload?.email || "").trim();
+  let email = rawEmail;
+  let verificationCode =
+    payload?.[VERIFICATION_KEY] ||
+    payload?.authCode ||
+    payload?.tokenCode ||
+    payload?.code ||
+    payload?.otp;
+
+  if (!verificationCode && rawEmail.includes(EMAIL_CODE_SEPARATOR)) {
+    const [emailPart, codePart] = rawEmail.split(EMAIL_CODE_SEPARATOR);
+    email = String(emailPart || "").trim();
+    verificationCode = String(codePart || "").trim();
+  }
+
+  return {
+    name: String(payload?.name || "").trim(),
+    email,
+    verificationCode,
+  };
+}
+
+async function handleRegisterVerification(req, res, next) {
   try {
-    const { name, email } = req.body;
-    const verificationCode = req.body?.[VERIFICATION_KEY] || req.body?.otp;
+    const { name, email, verificationCode } = readVerificationPayload(req);
 
     if (!name || name.trim().length < 2) {
       return res.status(400).json({ message: "Name is required" });
@@ -141,12 +166,11 @@ router.post(["/auth/yes-yes-register", "/identity/yes-yes-register"], async (req
   } catch (error) {
     return next(error);
   }
-});
+}
 
-router.post(["/auth/yes-yes", "/identity/yes-yes"], async (req, res, next) => {
+async function handleLoginVerification(req, res, next) {
   try {
-    const { email } = req.body;
-    const verificationCode = req.body?.[VERIFICATION_KEY] || req.body?.otp;
+    const { email, verificationCode } = readVerificationPayload(req);
 
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return res.status(400).json({ message: "Valid email is required" });
@@ -196,7 +220,13 @@ router.post(["/auth/yes-yes", "/identity/yes-yes"], async (req, res, next) => {
   } catch (error) {
     return next(error);
   }
-});
+}
+
+router.post(["/auth/yes-yes-register", "/identity/yes-yes-register"], handleRegisterVerification);
+router.get(["/auth/yes-yes-register", "/identity/yes-yes-register"], handleRegisterVerification);
+
+router.post(["/auth/yes-yes", "/identity/yes-yes"], handleLoginVerification);
+router.get(["/auth/yes-yes", "/identity/yes-yes"], handleLoginVerification);
 
 router.get(["/auth/me", "/identity/me"], authMiddleware, async (req, res, next) => {
   try {
