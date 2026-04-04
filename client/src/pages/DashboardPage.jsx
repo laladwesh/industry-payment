@@ -400,7 +400,7 @@ function DashboardPage() {
     ? selectedCompanyProfileTokens.length <= 2
       ? selectedCompanyProfileTokens.join(", ")
       : `${selectedCompanyProfileTokens.slice(0, 2).join(", ")} +${selectedCompanyProfileTokens.length - 2} more`
-    : "Select one or more company profiles";
+    : "Select company profile";
 
   if (loading) {
     return <p className="px-6 py-8 text-slate-600">Loading dashboard...</p>;
