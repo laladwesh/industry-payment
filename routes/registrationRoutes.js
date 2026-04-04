@@ -7,6 +7,14 @@ const authMiddleware = require("../middleware/auth");
 const { calculatePricing } = require("../utils/pricing");
 
 const router = express.Router();
+const REG_ROUTE_ALIASES = {
+  create: ["/registrations", "/flow/start"],
+  me: ["/registrations/me", "/flow/self"],
+  byId: ["/registrations/:registrationId", "/flow/item/:registrationId"],
+  attendees: ["/registrations/:registrationId/attendees", "/flow/item/:registrationId/people"],
+  limitGet: ["/admin/registration-limit", "/ops/cap"],
+  limitPut: ["/admin/registration-limit", "/ops/cap"],
+};
 
 const REGISTRATION_CONFIG_KEY = "registration-config";
 
@@ -59,7 +67,7 @@ function validateRepresentative(representative) {
   return null;
 }
 
-router.post("/registrations", authMiddleware, async (req, res, next) => {
+router.post(REG_ROUTE_ALIASES.create, authMiddleware, async (req, res, next) => {
   try {
     const existingRegistration = await Registration.findOne({ user: req.user.sub });
     if (existingRegistration) {
@@ -129,7 +137,7 @@ router.post("/registrations", authMiddleware, async (req, res, next) => {
   }
 });
 
-router.get("/registrations/me", authMiddleware, async (req, res, next) => {
+router.get(REG_ROUTE_ALIASES.me, authMiddleware, async (req, res, next) => {
   try {
     const registrations = await Registration.find({ user: req.user.sub }).sort({ createdAt: -1 });
     return res.json({ registrations });
@@ -138,7 +146,7 @@ router.get("/registrations/me", authMiddleware, async (req, res, next) => {
   }
 });
 
-router.get("/registrations/:registrationId", authMiddleware, async (req, res, next) => {
+router.get(REG_ROUTE_ALIASES.byId, authMiddleware, async (req, res, next) => {
   try {
     const registration = await Registration.findOne({
       _id: req.params.registrationId,
@@ -155,7 +163,7 @@ router.get("/registrations/:registrationId", authMiddleware, async (req, res, ne
   }
 });
 
-router.patch("/registrations/:registrationId/attendees", authMiddleware, async (req, res, next) => {
+router.patch(REG_ROUTE_ALIASES.attendees, authMiddleware, async (req, res, next) => {
   try {
     const registration = await Registration.findOne({
       _id: req.params.registrationId,
@@ -196,7 +204,7 @@ router.patch("/registrations/:registrationId/attendees", authMiddleware, async (
   }
 });
 
-router.get("/admin/registration-limit", authMiddleware, adminMiddleware, async (_req, res, next) => {
+router.get(REG_ROUTE_ALIASES.limitGet, authMiddleware, adminMiddleware, async (_req, res, next) => {
   try {
     const config = await getRegistrationConfig();
     const currentCount = await Registration.countDocuments();
@@ -211,7 +219,7 @@ router.get("/admin/registration-limit", authMiddleware, adminMiddleware, async (
   }
 });
 
-router.put("/admin/registration-limit", authMiddleware, adminMiddleware, async (req, res, next) => {
+router.put(REG_ROUTE_ALIASES.limitPut, authMiddleware, adminMiddleware, async (req, res, next) => {
   try {
     const nextLimit = Number(req.body?.maxRegistrations);
     if (!Number.isInteger(nextLimit) || nextLimit < 0) {

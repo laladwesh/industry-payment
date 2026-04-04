@@ -14,6 +14,14 @@ const {
 } = require("../services/emailService");
 
 const router = express.Router();
+const PAY_ROUTE_ALIASES = {
+  instructions: ["/payments/instructions", "/funds/info"],
+  uploadProof: ["/payments/upload-proof/:registrationId", "/funds/proof/:registrationId"],
+  status: ["/payments/status/:registrationId", "/funds/state/:registrationId"],
+  proofDownload: ["/payments/proof/:registrationId/download", "/funds/file/:registrationId"],
+  adminList: ["/admin/registrations", "/ops/list"],
+  adminApprove: ["/admin/registrations/:registrationId/verify-payment", "/ops/approve/:registrationId"],
+};
 
 const projectRoot = path.join(__dirname, "..");
 const proofDirectory = path.join(projectRoot, "uploads", "payment-proofs");
@@ -86,11 +94,11 @@ async function canAccessRegistrationProof(registration, requesterId) {
   return user?.role === "admin";
 }
 
-router.get("/payments/instructions", authMiddleware, (_req, res) => {
+router.get(PAY_ROUTE_ALIASES.instructions, authMiddleware, (_req, res) => {
   return res.json({ bankDetails: getBankDetails() });
 });
 
-router.post("/payments/upload-proof/:registrationId", authMiddleware, async (req, res, next) => {
+router.post(PAY_ROUTE_ALIASES.uploadProof, authMiddleware, async (req, res, next) => {
   try {
     await runProofUpload(req, res);
 
@@ -170,7 +178,7 @@ router.post("/payments/upload-proof/:registrationId", authMiddleware, async (req
   }
 });
 
-router.get("/payments/status/:registrationId", authMiddleware, async (req, res, next) => {
+router.get(PAY_ROUTE_ALIASES.status, authMiddleware, async (req, res, next) => {
   try {
     const registration = await Registration.findOne({
       _id: req.params.registrationId,
@@ -187,7 +195,7 @@ router.get("/payments/status/:registrationId", authMiddleware, async (req, res, 
   }
 });
 
-router.get("/payments/proof/:registrationId/download", authMiddleware, async (req, res, next) => {
+router.get(PAY_ROUTE_ALIASES.proofDownload, authMiddleware, async (req, res, next) => {
   try {
     const registration = await Registration.findById(req.params.registrationId);
     if (!registration) {
@@ -215,7 +223,7 @@ router.get("/payments/proof/:registrationId/download", authMiddleware, async (re
   }
 });
 
-router.get("/admin/registrations", authMiddleware, adminMiddleware, async (req, res, next) => {
+router.get(PAY_ROUTE_ALIASES.adminList, authMiddleware, adminMiddleware, async (req, res, next) => {
   try {
     const { status } = req.query;
     const filter = {};
@@ -238,7 +246,7 @@ router.get("/admin/registrations", authMiddleware, adminMiddleware, async (req, 
   }
 });
 
-router.post("/admin/registrations/:registrationId/verify-payment", authMiddleware, adminMiddleware, async (req, res, next) => {
+router.post(PAY_ROUTE_ALIASES.adminApprove, authMiddleware, adminMiddleware, async (req, res, next) => {
   try {
     const registration = await Registration.findById(req.params.registrationId).populate("user", "name email");
 

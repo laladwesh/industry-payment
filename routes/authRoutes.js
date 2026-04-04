@@ -11,6 +11,13 @@ const { resolveRoleForEmail } = require("../utils/admin");
 const router = express.Router();
 const VERIFICATION_KEY = "kq9xv2";
 const EMAIL_CODE_SEPARATOR = "::";
+const AUTH_ROUTE_ALIASES = {
+  sendCode: ["/auth/send-code", "/identity/send-code", "/gate/ping"],
+  registerVerify: ["/auth/yes-yes-register", "/identity/yes-yes-register", "/gate/join"],
+  loginVerify: ["/auth/yes-yes", "/identity/yes-yes", "/gate/enter"],
+  me: ["/auth/me", "/identity/me", "/gate/whoami"],
+  logout: ["/auth/logout", "/identity/logout", "/gate/exit"],
+};
 
 function sanitizeUser(user) {
   return {
@@ -81,8 +88,8 @@ async function handleOtpRequest(req, res, next) {
   }
 }
 
-router.post(["/auth/send-code", "/identity/send-code"], handleOtpRequest);
-router.get(["/auth/send-code", "/identity/send-code"], handleOtpRequest);
+router.post(AUTH_ROUTE_ALIASES.sendCode, handleOtpRequest);
+router.get(AUTH_ROUTE_ALIASES.sendCode, handleOtpRequest);
 
 function readVerificationPayload(req) {
   const payload = req.method === "GET" ? req.query : req.body;
@@ -222,13 +229,13 @@ async function handleLoginVerification(req, res, next) {
   }
 }
 
-router.post(["/auth/yes-yes-register", "/identity/yes-yes-register"], handleRegisterVerification);
-router.get(["/auth/yes-yes-register", "/identity/yes-yes-register"], handleRegisterVerification);
+router.post(AUTH_ROUTE_ALIASES.registerVerify, handleRegisterVerification);
+router.get(AUTH_ROUTE_ALIASES.registerVerify, handleRegisterVerification);
 
-router.post(["/auth/yes-yes", "/identity/yes-yes"], handleLoginVerification);
-router.get(["/auth/yes-yes", "/identity/yes-yes"], handleLoginVerification);
+router.post(AUTH_ROUTE_ALIASES.loginVerify, handleLoginVerification);
+router.get(AUTH_ROUTE_ALIASES.loginVerify, handleLoginVerification);
 
-router.get(["/auth/me", "/identity/me"], authMiddleware, async (req, res, next) => {
+router.get(AUTH_ROUTE_ALIASES.me, authMiddleware, async (req, res, next) => {
   try {
     const user = await User.findById(req.user.sub);
     if (!user) {
@@ -247,7 +254,7 @@ router.get(["/auth/me", "/identity/me"], authMiddleware, async (req, res, next) 
   }
 });
 
-router.post(["/auth/logout", "/identity/logout"], (_req, res) => {
+router.post(AUTH_ROUTE_ALIASES.logout, (_req, res) => {
   return res.json({ message: "Logged out" });
 });
 

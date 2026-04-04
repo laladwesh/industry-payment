@@ -35,8 +35,8 @@ function RegistrationProgressPage() {
       setError("");
       setMessage("");
       const [statusResponse, meResponse] = await Promise.all([
-        api.get(`/payments/status/${registrationId}`),
-        api.get("/identity/me"),
+        api.get(`/funds/state/${registrationId}`),
+        api.get("/gate/whoami"),
       ]);
       const nextRegistration = statusResponse.data.registration;
       setRegistration(nextRegistration);
@@ -98,7 +98,7 @@ function RegistrationProgressPage() {
       setError("");
       setMessage("");
 
-      const response = await api.patch(`/registrations/${registration._id}/attendees`, {
+      const response = await api.patch(`/flow/item/${registration._id}/people`, {
         attendees: attendeeDrafts,
       });
 

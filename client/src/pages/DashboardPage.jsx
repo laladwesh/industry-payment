@@ -68,9 +68,9 @@ function DashboardPage() {
     try {
       setLoading(true);
       const [meResponse, registrationsResponse, instructionsResponse] = await Promise.all([
-        api.get("/identity/me"),
-        api.get("/registrations/me"),
-        api.get("/payments/instructions"),
+        api.get("/gate/whoami"),
+        api.get("/flow/self"),
+        api.get("/funds/info"),
       ]);
 
       const meUser = meResponse.data.user || null;
@@ -171,7 +171,7 @@ function DashboardPage() {
       setError("");
       setMessage("");
 
-      const response = await api.post("/registrations", {
+      const response = await api.post("/flow/start", {
         attendeeCount,
         attendees: visibleAttendees,
         representative,
@@ -205,7 +205,7 @@ function DashboardPage() {
     setMessage("");
 
     try {
-      await api.post(`/payments/upload-proof/${registrationId}`, formData, {
+      await api.post(`/funds/proof/${registrationId}`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
