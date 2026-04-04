@@ -33,6 +33,18 @@ async function getRegistrationConfig() {
 }
 
 function normalizeRepresentative(input) {
+  const baseProfiles = Array.isArray(input?.companyProfiles)
+    ? input.companyProfiles
+    : String(input?.companyProfile || "").split(",");
+  const otherProfiles = String(input?.companyProfileOther || "").split(",");
+  const normalizedCompanyProfile = Array.from(
+    new Set(
+      [...baseProfiles, ...otherProfiles]
+        .map((item) => String(item).trim())
+        .filter((item) => item && item.toLowerCase() !== "other")
+    )
+  ).join(", ");
+
   return {
     companyName: String(input?.companyName || "").trim(),
     personName: String(input?.personName || "").trim(),
@@ -41,7 +53,7 @@ function normalizeRepresentative(input) {
       .trim()
       .toLowerCase(),
     contact: String(input?.contact || "").trim(),
-    companyProfile: String(input?.companyProfile || "").trim(),
+    companyProfile: normalizedCompanyProfile,
   };
 }
 

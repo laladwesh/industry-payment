@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../api";
 import StatusBadge from "../components/common/StatusBadge";
@@ -24,6 +24,57 @@ const emptyPaymentMeta = {
   paymentDate: "",
   billingAddress: "",
 };
+
+const OTHER_PROFILE_OPTION = "Other";
+const COMPANY_PROFILE_OPTIONS = [
+  "Software Development",
+  "Data Science",
+  "Core Engineering",
+  "Product",
+  "Consulting",
+  "HFT",
+  "Quant",
+  "AI/ML Research",
+  "Cloud & DevOps",
+  "Cybersecurity",
+  "Electronics & Embedded Systems",
+  "Manufacturing & Industrial Automation",
+  "Telecom",
+  "FinTech",
+  OTHER_PROFILE_OPTION,
+];
+
+function buildCompanyProfileValue(selectedProfiles, otherText) {
+  const regularProfiles = (Array.isArray(selectedProfiles) ? selectedProfiles : [])
+    .filter((profile) => profile && profile !== OTHER_PROFILE_OPTION)
+    .map((profile) => String(profile).trim())
+    .filter(Boolean);
+
+  const otherProfiles = String(otherText || "")
+    .split(",")
+    .map((profile) => profile.trim())
+    .filter(Boolean);
+
+  return Array.from(new Set([...regularProfiles, ...otherProfiles])).join(", ");
+}
+
+function parseCompanyProfileSelection(companyProfileValue) {
+  const parts = String(companyProfileValue || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+  const optionSet = new Set(COMPANY_PROFILE_OPTIONS.filter((item) => item !== OTHER_PROFILE_OPTION));
+  const knownProfiles = parts.filter((item) => optionSet.has(item));
+  const customProfiles = parts.filter((item) => !optionSet.has(item));
+
+  const selectedProfiles = customProfiles.length > 0 ? [...knownProfiles, OTHER_PROFILE_OPTION] : knownProfiles;
+
+  return {
+    selectedProfiles,
+    otherText: customProfiles.join(", "),
+  };
+}
 
 function toInputDate(value) {
   if (!value) {
@@ -62,6 +113,10 @@ function DashboardPage() {
   const [wizardSubmitting, setWizardSubmitting] = useState(false);
   const [wizardUploading, setWizardUploading] = useState(false);
   const [interestConsent, setInterestConsent] = useState(false);
+  const [companyProfilesSelected, setCompanyProfilesSelected] = useState([]);
+  const [companyProfileOther, setCompanyProfileOther] = useState("");
+  const [companyProfileDropdownOpen, setCompanyProfileDropdownOpen] = useState(false);
+  const companyProfileDropdownRef = useRef(null);
 
   const visibleAttendees = useMemo(() => attendees.slice(0, attendeeCount), [attendees, attendeeCount]);
 
@@ -84,6 +139,7 @@ function DashboardPage() {
       }
 
       if (primaryRegistration?.representative) {
+        const parsedProfiles = parseCompanyProfileSelection(primaryRegistration.representative.companyProfile || "");
         setRepresentative({
           companyName: primaryRegistration.representative.companyName || "",
           personName: primaryRegistration.representative.personName || "",
@@ -92,6 +148,8 @@ function DashboardPage() {
           contact: primaryRegistration.representative.contact || "",
           companyProfile: primaryRegistration.representative.companyProfile || "",
         });
+        setCompanyProfilesSelected(parsedProfiles.selectedProfiles);
+        setCompanyProfileOther(parsedProfiles.otherText);
       } else if (meUser) {
         setRepresentative((prev) => ({
           ...prev,
@@ -121,6 +179,19 @@ function DashboardPage() {
     loadData();
   }, [loadData]);
 
+  useEffect(() => {
+    function closeCompanyProfileDropdownOnOutsideClick(event) {
+      if (companyProfileDropdownRef.current && !companyProfileDropdownRef.current.contains(event.target)) {
+        setCompanyProfileDropdownOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", closeCompanyProfileDropdownOnOutsideClick);
+    return () => {
+      document.removeEventListener("mousedown", closeCompanyProfileDropdownOnOutsideClick);
+    };
+  }, []);
+
   function logout() {
     clearAuth();
     navigate("/login", { replace: true });
@@ -148,6 +219,40 @@ function DashboardPage() {
     }));
   }
 
+  function updateCompanyProfiles(selectedProfiles) {
+    const hasOther = selectedProfiles.includes(OTHER_PROFILE_OPTION);
+    const nextOther = hasOther ? companyProfileOther : "";
+
+    setCompanyProfilesSelected(selectedProfiles);
+    if (!hasOther) {
+      setCompanyProfileOther("");
+    }
+
+    setRepresentative((prev) => ({
+      ...prev,
+      companyProfile: buildCompanyProfileValue(selectedProfiles, nextOther),
+    }));
+  }
+
+  function toggleCompanyProfile(profile) {
+    const selectedSet = new Set(companyProfilesSelected);
+    if (selectedSet.has(profile)) {
+      selectedSet.delete(profile);
+    } else {
+      selectedSet.add(profile);
+    }
+
+    updateCompanyProfiles(Array.from(selectedSet));
+  }
+
+  function updateCompanyProfileOther(value) {
+    setCompanyProfileOther(value);
+    setRepresentative((prev) => ({
+      ...prev,
+      companyProfile: buildCompanyProfileValue(companyProfilesSelected, value),
+    }));
+  }
+
   async function createRegistration() {
     if (existingRegistration) {
       setError("Only one registration is allowed per account.");
@@ -161,7 +266,9 @@ function DashboardPage() {
       return;
     }
 
-    if (!representative.companyName || !representative.companyProfile) {
+    const normalizedCompanyProfile = buildCompanyProfileValue(companyProfilesSelected, companyProfileOther);
+
+    if (!representative.companyName || !normalizedCompanyProfile) {
       setError("Please complete company details (company name and company profile).");
       setWizardStep(2);
       return;
@@ -181,7 +288,10 @@ function DashboardPage() {
       const response = await api.post("/v7m-qr/r0", {
         attendeeCount,
         attendees: visibleAttendees,
-        representative,
+        representative: {
+          ...representative,
+          companyProfile: normalizedCompanyProfile,
+        },
         conclaveInterestConfirmed: true,
       });
 
@@ -278,6 +388,19 @@ function DashboardPage() {
   const gstRate = Number(activeRegistration?.amount?.gstRate ?? 0.18);
   const gstPercent = Math.round(gstRate * 100);
   const gstAmount = Number(activeRegistration?.amount?.gstAmount ?? baseAmount * gstRate);
+  const selectedCompanyProfileTokens = useMemo(
+    () =>
+      buildCompanyProfileValue(companyProfilesSelected, companyProfileOther)
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean),
+    [companyProfilesSelected, companyProfileOther]
+  );
+  const companyProfileLabel = selectedCompanyProfileTokens.length
+    ? selectedCompanyProfileTokens.length <= 2
+      ? selectedCompanyProfileTokens.join(", ")
+      : `${selectedCompanyProfileTokens.slice(0, 2).join(", ")} +${selectedCompanyProfileTokens.length - 2} more`
+    : "Select one or more company profiles";
 
   if (loading) {
     return <p className="px-6 py-8 text-slate-600">Loading dashboard...</p>;
@@ -365,14 +488,63 @@ function DashboardPage() {
                     className="rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-[#2a5bd7]"
                     required
                   />
-                  <input
-                    value={representative.companyProfile}
-                    onChange={(event) => updateRepresentative("companyProfile", event.target.value)}
-                    placeholder="Company Profile"
-                    className="rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-[#2a5bd7]"
-                    required
-                  />
+                  <div className="relative" ref={companyProfileDropdownRef}>
+                    <button
+                      type="button"
+                      onClick={() => setCompanyProfileDropdownOpen((prev) => !prev)}
+                      className="flex w-full items-center justify-between rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-left text-sm text-slate-700 outline-none transition hover:border-slate-400 focus:border-[#2a5bd7]"
+                    >
+                      <span className="truncate">{companyProfileLabel}</span>
+                      <span className="ml-2 text-slate-500">{companyProfileDropdownOpen ? "▲" : "▼"}</span>
+                    </button>
+
+                    {companyProfileDropdownOpen && (
+                      <div className="absolute z-20 mt-2 max-h-64 w-full overflow-auto rounded-xl border border-slate-200 bg-white p-2 shadow-[0_10px_25px_rgba(15,23,42,0.12)]">
+                        {COMPANY_PROFILE_OPTIONS.map((profile) => {
+                          const checked = companyProfilesSelected.includes(profile);
+                          return (
+                            <label
+                              key={profile}
+                              className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-slate-700 transition hover:bg-slate-50"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={() => toggleCompanyProfile(profile)}
+                                className="h-4 w-4 rounded border-slate-300 text-[#2a5bd7] focus:ring-[#2a5bd7]"
+                              />
+                              <span>{profile}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 </div>
+
+                <p className="text-xs text-slate-600">Select one or more profiles using checkboxes.</p>
+
+                {selectedCompanyProfileTokens.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {selectedCompanyProfileTokens.map((profile) => (
+                      <span
+                        key={profile}
+                        className="rounded-full border border-[#bfd0ff] bg-[#e9f0ff] px-2.5 py-1 text-xs font-semibold text-[#1f3f98]"
+                      >
+                        {profile}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {companyProfilesSelected.includes(OTHER_PROFILE_OPTION) && (
+                  <input
+                    value={companyProfileOther}
+                    onChange={(event) => updateCompanyProfileOther(event.target.value)}
+                    placeholder="Other profiles (comma separated)"
+                    className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-[#2a5bd7]"
+                  />
+                )}
 
                 <div className="h-px w-full bg-slate-200" />
 
@@ -515,6 +687,9 @@ function DashboardPage() {
                   <p className="mt-1">
                     Contact: <span className="font-semibold text-slate-900">{representative.contact || "-"}</span>
                   </p>
+                  <p className="mt-1">
+                    Company Profiles: <span className="font-semibold text-slate-900">{representative.companyProfile || "-"}</span>
+                  </p>
                   <p>
                     Attendee Count: <span className="font-semibold text-slate-900">{attendeeCount}</span>
                   </p>
@@ -535,7 +710,7 @@ function DashboardPage() {
                     className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#2a5bd7] focus:ring-[#2a5bd7]"
                   />
                   <span>
-                    I am interested in participating in this conclave and I am willing to pay the applicable
+                    Our Company is interested in participating in this conclave happening at IIT Guwahati and we are am willing to pay the applicable
                     registration fees.
                   </span>
                 </label>
