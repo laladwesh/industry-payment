@@ -2,7 +2,7 @@ import { wizardSteps } from "../../constants/registration";
 
 function StepBar({ currentStep }) {
   return (
-    <div className="mb-6 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+    <div className="mb-6 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
       {wizardSteps.map((item, index) => {
         const step = index + 1;
         const active = currentStep === step;

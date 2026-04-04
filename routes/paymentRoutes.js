@@ -78,7 +78,7 @@ function getBankDetails() {
     ifsc: process.env.BANK_IFSC || "",
     bankName: process.env.BANK_NAME || "",
     branch: process.env.BANK_BRANCH || "",
-    upiId: process.env.BANK_UPI_ID || "",
+    // upiId: process.env.BANK_UPI_ID || "",
     instructions:
       process.env.BANK_PAYMENT_INSTRUCTIONS ||
       "Transfer the amount to the account shown and upload payment proof for manual verification.",

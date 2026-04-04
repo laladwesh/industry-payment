@@ -92,6 +92,13 @@ router.post(REG_ROUTE_ALIASES.create, authMiddleware, async (req, res, next) => 
     const attendeeCount = Number(req.body.attendeeCount);
     const inputAttendees = Array.isArray(req.body.attendees) ? req.body.attendees : [];
     const representative = normalizeRepresentative(req.body.representative);
+    const hasConclaveInterestConsent = req.body?.conclaveInterestConfirmed === true;
+
+    if (!hasConclaveInterestConsent) {
+      return res.status(400).json({
+        message: "Please confirm interest in the conclave and willingness to pay registration fees.",
+      });
+    }
 
     const representativeError = validateRepresentative(representative);
     if (representativeError) {

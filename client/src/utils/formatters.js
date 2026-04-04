@@ -32,3 +32,11 @@ export function getDownloadFileName(registration) {
   }
   return `payment-proof-${registration?._id || "file"}`;
 }
+
+export function formatRegistrationId(registrationId) {
+  const value = String(registrationId || "").trim();
+  if (!value) {
+    return "-";
+  }
+  return value.slice(-5);
+}

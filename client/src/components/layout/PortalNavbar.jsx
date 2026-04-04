@@ -1,4 +1,4 @@
-import { CCD_LABEL, IITG_LOGO_URL } from "../../constants/branding";
+import { CCD_LABEL, CONCLAVE_DATES, CONCLAVE_VENUE, IITG_LOGO_URL } from "../../constants/branding";
 
 function PortalNavbar({ user, activePage, onLogout }) {
   const isAdminPage = activePage === "admin";
@@ -10,11 +10,13 @@ function PortalNavbar({ user, activePage, onLogout }) {
           <img
             src={IITG_LOGO_URL}
             alt="IIT Guwahati logo"
-            className="h-16 w-16 rounded-full border border-slate-200 bg-white p-1 object-contain"
+            className="h-20 w-20 rounded-full border border-slate-200 bg-white p-1 object-contain"
           />
           <div>
             <p className="text-xl font-semibold leading-tight text-slate-900 sm:text-4xl">Industry Conclave 2026</p>
             <p className="text-sm text-slate-500 sm:text-lg">{CCD_LABEL}</p>
+            <p className="mt-0.5 text-xs font-semibold uppercase tracking-[0.14em] text-[#2a5bd7]">{CONCLAVE_DATES}</p>
+            <p className="mt-0.5 text-xs text-slate-600">Venue: {CONCLAVE_VENUE}</p>
             {isAdminPage && <p className="mt-0.5 text-xs font-semibold uppercase tracking-[0.16em] text-[#2a5bd7]">Admin Verification</p>}
           </div>
         </div>

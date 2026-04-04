@@ -10,11 +10,15 @@ export const emptyAttendee = {
 
 export const wizardSteps = [
   {
-    title: "Participants",
-    caption: "Choose attendee count",
+    title: "Personal Details",
+    caption: "Representative contact info",
   },
   {
-    title: "Details",
+    title: "Company Details",
+    caption: "Company and attendee count",
+  },
+  {
+    title: "Participants",
     caption: "Add participant info",
   },
   {

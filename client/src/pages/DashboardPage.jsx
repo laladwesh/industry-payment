@@ -7,7 +7,7 @@ import PortalNavbar from "../components/layout/PortalNavbar";
 import { CONCLAVE_DATES } from "../constants/branding";
 import { MAX_ATTENDEES, emptyAttendee } from "../constants/registration";
 import { clearAuth } from "../utils/authStorage";
-import { formatMoney } from "../utils/formatters";
+import { formatMoney, formatRegistrationId } from "../utils/formatters";
 import { downloadRegistrationProof } from "../utils/proofDownload";
 
 const emptyRepresentative = {
@@ -61,6 +61,7 @@ function DashboardPage() {
   const [wizardPaymentMeta, setWizardPaymentMeta] = useState({ ...emptyPaymentMeta });
   const [wizardSubmitting, setWizardSubmitting] = useState(false);
   const [wizardUploading, setWizardUploading] = useState(false);
+  const [interestConsent, setInterestConsent] = useState(false);
 
   const visibleAttendees = useMemo(() => attendees.slice(0, attendeeCount), [attendees, attendeeCount]);
 
@@ -79,7 +80,7 @@ function DashboardPage() {
       setExistingRegistration(primaryRegistration);
       if (!draftRegistration && primaryRegistration) {
         setDraftRegistration(primaryRegistration);
-        setWizardStep(4);
+        setWizardStep(5);
       }
 
       if (primaryRegistration?.representative) {
@@ -150,19 +151,25 @@ function DashboardPage() {
   async function createRegistration() {
     if (existingRegistration) {
       setError("Only one registration is allowed per account.");
+      setWizardStep(5);
+      return;
+    }
+
+    if (!representative.personName || !representative.designation || !representative.email || !representative.contact) {
+      setError("Please complete personal details (name, designation, email, and contact number).");
+      setWizardStep(1);
+      return;
+    }
+
+    if (!representative.companyName || !representative.companyProfile) {
+      setError("Please complete company details (company name and company profile).");
+      setWizardStep(2);
+      return;
+    }
+
+    if (!interestConsent) {
+      setError("Please confirm your interest in the conclave and willingness to pay registration fees.");
       setWizardStep(4);
-      return;
-    }
-
-    if (!representative.companyName || !representative.personName || !representative.designation) {
-      setError("Please fill company name, representative name, and designation.");
-      setWizardStep(1);
-      return;
-    }
-
-    if (!representative.email || !representative.contact || !representative.companyProfile) {
-      setError("Please complete representative email, contact number, and company profile.");
-      setWizardStep(1);
       return;
     }
 
@@ -175,17 +182,18 @@ function DashboardPage() {
         attendeeCount,
         attendees: visibleAttendees,
         representative,
+        conclaveInterestConfirmed: true,
       });
 
       setDraftRegistration(response.data.registration);
-      setWizardStep(4);
+      setWizardStep(5);
       setMessage("Registration created. Please complete bank transfer and upload proof.");
       await loadData();
     } catch (requestError) {
       if (requestError.response?.status === 409 && requestError.response?.data?.registration) {
         setExistingRegistration(requestError.response.data.registration);
         setDraftRegistration(requestError.response.data.registration);
-        setWizardStep(4);
+        setWizardStep(5);
       }
       setError(requestError.response?.data?.message || "Failed to create registration");
     } finally {
@@ -266,6 +274,10 @@ function DashboardPage() {
 
   const activeRegistration = draftRegistration || existingRegistration;
   const hasUploadedProof = Boolean(activeRegistration?.payment?.proof?.relativePath);
+  const baseAmount = Number(activeRegistration?.amount?.baseAmount || 20000);
+  const gstRate = Number(activeRegistration?.amount?.gstRate ?? 0.18);
+  const gstPercent = Math.round(gstRate * 100);
+  const gstAmount = Number(activeRegistration?.amount?.gstAmount ?? baseAmount * gstRate);
 
   if (loading) {
     return <p className="px-6 py-8 text-slate-600">Loading dashboard...</p>;
@@ -280,10 +292,6 @@ function DashboardPage() {
           {/* <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#2a5bd7]">Dashboard</p> */}
           <h2 className="mt-2 text-3xl font-semibold text-slate-900">Registration Form</h2>
           {/* <p className="mt-2 text-sm font-medium text-slate-700">{CCD_LABEL}</p> */}
-          <p className="mt-1 text-sm text-slate-600">
-            Conclave dates: {CONCLAVE_DATES}. Complete your one-time registration and payment proof submission from this
-            page.
-          </p>
         </div>
 
         <div className="pt-5">
@@ -302,26 +310,12 @@ function DashboardPage() {
 
             {wizardStep === 1 && (
               <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <p className="text-sm font-semibold text-slate-800">Representative & Company Details</p>
+                <p className="text-sm font-semibold text-slate-800">Representative Personal Details</p>
                 <div className="grid gap-2 sm:grid-cols-2">
-                  <input
-                    value={representative.companyName}
-                    onChange={(event) => updateRepresentative("companyName", event.target.value)}
-                    placeholder="Company Name"
-                    className="rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-[#2a5bd7]"
-                    required
-                  />
                   <input
                     value={representative.personName}
                     onChange={(event) => updateRepresentative("personName", event.target.value)}
                     placeholder="Representative Name"
-                    className="rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-[#2a5bd7]"
-                    required
-                  />
-                  <input
-                    value={representative.designation}
-                    onChange={(event) => updateRepresentative("designation", event.target.value)}
-                    placeholder="Designation"
                     className="rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-[#2a5bd7]"
                     required
                   />
@@ -337,6 +331,37 @@ function DashboardPage() {
                     value={representative.contact}
                     onChange={(event) => updateRepresentative("contact", event.target.value)}
                     placeholder="Contact Number"
+                    className="rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-[#2a5bd7]"
+                    required
+                  />
+                  <input
+                    value={representative.designation}
+                    onChange={(event) => updateRepresentative("designation", event.target.value)}
+                    placeholder="Designation"
+                    className="rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-[#2a5bd7]"
+                    required
+                  />
+                </div>
+
+                <div className="flex justify-end">
+                  <button
+                    className="rounded-xl bg-[#2a5bd7] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#2049b0]"
+                    onClick={() => setWizardStep(2)}
+                  >
+                    Continue
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {wizardStep === 2 && (
+              <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <p className="text-sm font-semibold text-slate-800">Company Details</p>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <input
+                    value={representative.companyName}
+                    onChange={(event) => updateRepresentative("companyName", event.target.value)}
+                    placeholder="Company Name"
                     className="rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-[#2a5bd7]"
                     required
                   />
@@ -393,10 +418,16 @@ function DashboardPage() {
                   Participant details are optional. You can proceed with only attendee count and fill details later.
                 </p>
 
-                <div className="flex justify-end">
+                <div className="flex justify-between">
+                  <button
+                    className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700"
+                    onClick={() => setWizardStep(1)}
+                  >
+                    Back
+                  </button>
                   <button
                     className="rounded-xl bg-[#2a5bd7] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#2049b0]"
-                    onClick={() => setWizardStep(fillDetailsNow ? 2 : 3)}
+                    onClick={() => setWizardStep(fillDetailsNow ? 3 : 4)}
                   >
                     Continue
                   </button>
@@ -404,7 +435,7 @@ function DashboardPage() {
               </div>
             )}
 
-            {wizardStep === 2 && (
+            {wizardStep === 3 && (
               <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
                 <p className="text-sm text-slate-600">
                   Fill attendee details if available. You can also skip this step and continue.
@@ -449,20 +480,20 @@ function DashboardPage() {
                 <div className="flex justify-between">
                   <button
                     className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700"
-                    onClick={() => setWizardStep(1)}
+                    onClick={() => setWizardStep(2)}
                   >
                     Back
                   </button>
                   <div className="flex gap-2">
                     <button
                       className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700"
-                      onClick={() => setWizardStep(3)}
+                      onClick={() => setWizardStep(4)}
                     >
                       Skip For Now
                     </button>
                     <button
                       className="rounded-xl bg-[#2a5bd7] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#2049b0]"
-                      onClick={() => setWizardStep(3)}
+                      onClick={() => setWizardStep(4)}
                     >
                       Continue
                     </button>
@@ -471,7 +502,7 @@ function DashboardPage() {
               </div>
             )}
 
-            {wizardStep === 3 && (
+            {wizardStep === 4 && (
               <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
                 <p className="text-sm text-slate-700">Review your registration details before submission.</p>
                 <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-700">
@@ -495,25 +526,38 @@ function DashboardPage() {
                     <p className="mt-2 text-rose-700">Creation is disabled because one registration already exists.</p>
                   )}
                 </div>
+
+                <label className="flex items-start gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={interestConsent}
+                    onChange={(event) => setInterestConsent(event.target.checked)}
+                    className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#2a5bd7] focus:ring-[#2a5bd7]"
+                  />
+                  <span>
+                    I am interested in participating in this conclave and I am willing to pay the applicable
+                    registration fees.
+                  </span>
+                </label>
                 <div className="flex justify-between">
                   <div className="flex gap-2">
                     <button
                       className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700"
-                      onClick={() => setWizardStep(1)}
+                      onClick={() => setWizardStep(2)}
                     >
-                      Back To Count
+                      Back To Company Details
                     </button>
                     <button
                       className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700"
-                      onClick={() => setWizardStep(2)}
+                      onClick={() => setWizardStep(3)}
                     >
-                      Fill Details (Optional)
+                      Participant Details (Optional)
                     </button>
                   </div>
                   <button
                     className="rounded-xl bg-[#2a5bd7] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#2049b0] disabled:opacity-60"
                     onClick={createRegistration}
-                    disabled={wizardSubmitting || Boolean(existingRegistration)}
+                    disabled={wizardSubmitting || Boolean(existingRegistration) || !interestConsent}
                   >
                     {existingRegistration
                       ? "Registration Already Created"
@@ -525,7 +569,7 @@ function DashboardPage() {
               </div>
             )}
 
-            {wizardStep === 4 && (
+            {wizardStep === 5 && (
               <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
                 {!activeRegistration && <p className="text-sm text-slate-600">Create a registration first to upload proof.</p>}
                 {activeRegistration && (
@@ -551,9 +595,7 @@ function DashboardPage() {
                             <p>
                               Branch: <span className="font-semibold text-slate-900">{bankDetails.branch || "-"}</span>
                             </p>
-                            <p>
-                              UPI ID: <span className="font-semibold text-slate-900">{bankDetails.upiId || "-"}</span>
-                            </p>
+                           
                             <p className="sm:col-span-2 text-xs text-slate-600">{bankDetails.instructions}</p>
                           </div>
                         )}
@@ -562,11 +604,14 @@ function DashboardPage() {
 
                     <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-700">
                       <p>
-                        Registration ID: <span className="font-semibold text-slate-900">{activeRegistration._id}</span>
+                        Registration ID (Last 5): <span className="font-semibold text-slate-900">{formatRegistrationId(activeRegistration._id)}</span>
                       </p>
                       <p className="mt-1">
                         Payable Amount:{" "}
                         <span className="font-semibold text-slate-900">{formatMoney(activeRegistration.amount.totalAmount)}</span>
+                      </p>
+                      <p className="mt-1 text-xs text-slate-600">
+                        {formatMoney(baseAmount)} + {gstPercent}% applicable GST ({formatMoney(gstAmount)})
                       </p>
                       <p className="mt-2">
                         Current Status: <StatusBadge status={activeRegistration.status} />
