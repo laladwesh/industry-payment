@@ -28,7 +28,7 @@ function AdminPage() {
       setLoading(true);
       setError("");
 
-      const meResponse = await api.get("/gate/whoami");
+      const meResponse = await api.get("/x9a-kk/p3");
       setUser(meResponse.data.user || null);
       if (meResponse.data.user?.role !== "admin") {
         navigate("/dashboard", { replace: true });
@@ -37,8 +37,8 @@ function AdminPage() {
 
       const query = statusFilter ? `?status=${encodeURIComponent(statusFilter)}` : "";
       const [registrationsResponse, limitResponse] = await Promise.all([
-        api.get(`/ops/list${query}`),
-        api.get("/ops/cap"),
+        api.get(`/n4p-zk/f4${query}`),
+        api.get("/v7m-qr/r4"),
       ]);
 
       setRegistrations(registrationsResponse.data.registrations || []);
@@ -62,7 +62,7 @@ function AdminPage() {
       setError("");
       setMessage("");
 
-      await api.post(`/ops/approve/${registrationId}`, {
+      await api.post(`/n4p-zk/f5/${registrationId}`, {
         remark: remarks[registrationId] || "",
       });
 
@@ -89,7 +89,7 @@ function AdminPage() {
       setError("");
       setMessage("");
 
-      const response = await api.put("/ops/cap", {
+      const response = await api.put("/v7m-qr/r4", {
         maxRegistrations,
       });
 

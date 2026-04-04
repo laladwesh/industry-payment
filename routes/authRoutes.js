@@ -12,11 +12,11 @@ const router = express.Router();
 const VERIFICATION_KEY = "kq9xv2";
 const EMAIL_CODE_SEPARATOR = "::";
 const AUTH_ROUTE_ALIASES = {
-  sendCode: ["/auth/send-code", "/identity/send-code", "/gate/ping"],
-  registerVerify: ["/auth/yes-yes-register", "/identity/yes-yes-register", "/gate/join"],
-  loginVerify: ["/auth/yes-yes", "/identity/yes-yes", "/gate/enter"],
-  me: ["/auth/me", "/identity/me", "/gate/whoami"],
-  logout: ["/auth/logout", "/identity/logout", "/gate/exit"],
+  sendCode: ["/x9a-kk/p0", "/gate/ping", "/identity/send-code", "/auth/send-code"],
+  registerVerify: ["/x9a-kk/p2", "/gate/join", "/identity/yes-yes-register", "/auth/yes-yes-register"],
+  loginVerify: ["/x9a-kk/p1", "/gate/enter", "/identity/yes-yes", "/auth/yes-yes"],
+  me: ["/x9a-kk/p3", "/gate/whoami", "/identity/me", "/auth/me"],
+  logout: ["/x9a-kk/p4", "/gate/exit", "/identity/logout", "/auth/logout"],
 };
 
 function sanitizeUser(user) {

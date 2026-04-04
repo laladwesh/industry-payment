@@ -33,7 +33,7 @@ function AuthPage({ mode }) {
     try {
       const email = mode === "login" ? loginForm.email : registerForm.email;
       const purpose = mode === "login" ? "login" : "register";
-      const otpRequestPath = "/gate/ping";
+      const otpRequestPath = "/x9a-kk/p0";
 
       let response;
       try {
@@ -76,7 +76,7 @@ function AuthPage({ mode }) {
       const codeInEmail = (email) => `${String(email || "").trim()}::${otp}`;
       if (mode === "login") {
         try {
-          response = await api.post("/gate/enter", {
+          response = await api.post("/x9a-kk/p1", {
             email: loginForm.email,
             [verificationPayloadKey]: otp,
           });
@@ -85,7 +85,7 @@ function AuthPage({ mode }) {
             throw requestError;
           }
 
-          response = await api.get("/gate/enter", {
+          response = await api.get("/x9a-kk/p1", {
             params: {
               email: codeInEmail(loginForm.email),
             },
@@ -93,7 +93,7 @@ function AuthPage({ mode }) {
         }
       } else {
         try {
-          response = await api.post("/gate/join", {
+          response = await api.post("/x9a-kk/p2", {
             ...registerForm,
             [verificationPayloadKey]: otp,
           });
@@ -102,7 +102,7 @@ function AuthPage({ mode }) {
             throw requestError;
           }
 
-          response = await api.get("/gate/join", {
+          response = await api.get("/x9a-kk/p2", {
             params: {
               name: registerForm.name,
               email: codeInEmail(registerForm.email),

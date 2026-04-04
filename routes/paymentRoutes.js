@@ -15,12 +15,12 @@ const {
 
 const router = express.Router();
 const PAY_ROUTE_ALIASES = {
-  instructions: ["/payments/instructions", "/funds/info"],
-  uploadProof: ["/payments/upload-proof/:registrationId", "/funds/proof/:registrationId"],
-  status: ["/payments/status/:registrationId", "/funds/state/:registrationId"],
-  proofDownload: ["/payments/proof/:registrationId/download", "/funds/file/:registrationId"],
-  adminList: ["/admin/registrations", "/ops/list"],
-  adminApprove: ["/admin/registrations/:registrationId/verify-payment", "/ops/approve/:registrationId"],
+  instructions: ["/n4p-zk/f0", "/funds/info", "/payments/instructions"],
+  uploadProof: ["/n4p-zk/f1/:registrationId", "/funds/proof/:registrationId", "/payments/upload-proof/:registrationId"],
+  status: ["/n4p-zk/f2/:registrationId", "/funds/state/:registrationId", "/payments/status/:registrationId"],
+  proofDownload: ["/n4p-zk/f3/:registrationId", "/funds/file/:registrationId", "/payments/proof/:registrationId/download"],
+  adminList: ["/n4p-zk/f4", "/ops/list", "/admin/registrations"],
+  adminApprove: ["/n4p-zk/f5/:registrationId", "/ops/approve/:registrationId", "/admin/registrations/:registrationId/verify-payment"],
 };
 
 const projectRoot = path.join(__dirname, "..");

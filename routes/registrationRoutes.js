@@ -8,12 +8,12 @@ const { calculatePricing } = require("../utils/pricing");
 
 const router = express.Router();
 const REG_ROUTE_ALIASES = {
-  create: ["/registrations", "/flow/start"],
-  me: ["/registrations/me", "/flow/self"],
-  byId: ["/registrations/:registrationId", "/flow/item/:registrationId"],
-  attendees: ["/registrations/:registrationId/attendees", "/flow/item/:registrationId/people"],
-  limitGet: ["/admin/registration-limit", "/ops/cap"],
-  limitPut: ["/admin/registration-limit", "/ops/cap"],
+  create: ["/v7m-qr/r0", "/flow/start", "/registrations"],
+  me: ["/v7m-qr/r1", "/flow/self", "/registrations/me"],
+  byId: ["/v7m-qr/r2/:registrationId", "/flow/item/:registrationId", "/registrations/:registrationId"],
+  attendees: ["/v7m-qr/r3/:registrationId", "/flow/item/:registrationId/people", "/registrations/:registrationId/attendees"],
+  limitGet: ["/v7m-qr/r4", "/ops/cap", "/admin/registration-limit"],
+  limitPut: ["/v7m-qr/r4", "/ops/cap", "/admin/registration-limit"],
 };
 
 const REGISTRATION_CONFIG_KEY = "registration-config";
