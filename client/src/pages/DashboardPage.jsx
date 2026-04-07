@@ -786,7 +786,7 @@ function DashboardPage() {
                         <span className="font-semibold text-slate-900">{formatMoney(activeRegistration.amount.totalAmount)}</span>
                       </p>
                       <p className="mt-1 text-xs text-slate-600">
-                        {formatMoney(baseAmount)} + {gstPercent}% applicable GST ({formatMoney(gstAmount)})
+                       Registration Fees {formatMoney(baseAmount)} + {gstPercent}% applicable GST ({formatMoney(gstAmount)})
                       </p>
                       <p className="mt-2">
                         Current Status: <StatusBadge status={activeRegistration.status} />
