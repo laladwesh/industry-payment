@@ -22,6 +22,9 @@ const PORT = process.env.PORT || 5000;
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || "http://localhost:3000";
 const API_BASE = process.env.API_BASE || "/ccd-industry/api";
 const APP_BASE = process.env.APP_BASE || "/ccd-industry";
+const API_BASE_ALIASES = Array.from(new Set([API_BASE, "/ccd-industry/api", "/api"]))
+  .map((base) => String(base || "").trim())
+  .filter((base) => base.startsWith("/"));
 
 const configuredOrigins = CLIENT_ORIGIN.split(",")
   .map((origin) => origin.trim())
@@ -60,19 +63,28 @@ app.get("/", (_req, res) => {
   res.redirect(APP_BASE);
 });
 
-app.get(`${API_BASE}/health`, (_req, res) => {
-  res.json({ ok: true, service: "industry-payment", base: API_BASE, timestamp: new Date().toISOString() });
-});
-
-app.get(`${API_BASE}/test`, (_req, res) => {
-  res.json({
-    ok: true,
-    message: "Backend is running",
-    environment: process.env.NODE_ENV || "development",
-    base: API_BASE,
-    timestamp: new Date().toISOString(),
+for (const apiBase of API_BASE_ALIASES) {
+  app.get(`${apiBase}/health`, (_req, res) => {
+    res.json({
+      ok: true,
+      service: "industry-payment",
+      base: apiBase,
+      aliases: API_BASE_ALIASES,
+      timestamp: new Date().toISOString(),
+    });
   });
-});
+
+  app.get(`${apiBase}/test`, (_req, res) => {
+    res.json({
+      ok: true,
+      message: "Backend is running",
+      environment: process.env.NODE_ENV || "development",
+      base: apiBase,
+      aliases: API_BASE_ALIASES,
+      timestamp: new Date().toISOString(),
+    });
+  });
+}
 
 
 
@@ -87,9 +99,11 @@ app.get(`${API_BASE}/test`, (_req, res) => {
 // });
 
 
-app.use(API_BASE, authRoutes);
-app.use(API_BASE, registrationRoutes);
-app.use(API_BASE, paymentRoutes);
+for (const apiBase of API_BASE_ALIASES) {
+  app.use(apiBase, authRoutes);
+  app.use(apiBase, registrationRoutes);
+  app.use(apiBase, paymentRoutes);
+}
 
 if (process.env.NODE_ENV === "production") {
   const clientPath = path.join(__dirname, "client/build");
@@ -101,7 +115,7 @@ if (process.env.NODE_ENV === "production") {
       return next();
     }
 
-    if (req.path.startsWith(`${API_BASE}/`) || req.path === API_BASE) {
+    if (API_BASE_ALIASES.some((apiBase) => req.path === apiBase || req.path.startsWith(`${apiBase}/`))) {
       return res.status(404).end();
     }
 
