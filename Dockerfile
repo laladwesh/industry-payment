@@ -4,7 +4,7 @@ WORKDIR /app
 COPY package*.json ./
 COPY client/package*.json ./client/
 WORKDIR /app/client
-RUN npm ci --include=dev --legacy-peer-deps
+RUN npm install --legacy-peer-deps
 COPY client/ ./
 RUN npm run build
 
@@ -13,7 +13,7 @@ FROM node:20-alpine AS server-runtime
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci --omit=dev
+RUN npm install --omit=dev --legacy-peer-deps
 
 COPY config ./config
 COPY middleware ./middleware
