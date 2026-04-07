@@ -2,7 +2,7 @@ import api from "../api";
 import { getDownloadFileName } from "./formatters";
 
 export async function downloadRegistrationProof(registration) {
-  const response = await api.get(`/n4p-zk/f3/${registration._id}`, {
+  const response = await api.get(`/payments/proof/${registration._id}/download`, {
     responseType: "blob",
   });
 
