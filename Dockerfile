@@ -1,8 +1,10 @@
 FROM node:20-alpine AS client-builder
 
+WORKDIR /app
+COPY package*.json ./
+COPY client/package*.json ./client/
 WORKDIR /app/client
-COPY client/package*.json ./
-RUN npm install --legacy-peer-deps
+RUN npm ci --include=dev --legacy-peer-deps
 COPY client/ ./
 RUN npm run build
 
